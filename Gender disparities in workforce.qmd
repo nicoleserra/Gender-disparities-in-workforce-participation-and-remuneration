@@ -1,0 +1,356 @@
+---
+title: "Project 5: Gender disparities in workforce participation and remuneration"
+author: ""
+format: pdf
+editor: visual
+---
+
+# 1. Introduction
+
+This report examines the differences in female involvement in the workplace by area. It indicates trends in gender equality and discusses the elements that help or impede the advancement of gender equality in the workplace.
+
+**Research Questions**
+
+1.  What is the average age at first marriage by gender across the years 1976 to 2021?
+
+2.  Which countries have the highest and lowest age at first marriage for females and males throughout the years?
+
+3.  What is the labour force participation by gender from the age of 15 to 64 years?
+
+4.  What is the comparison of wage and salaried workers by gender from the years 1991 to 2021?
+
+5.  What has been the gender breakdown of employment in the last ten years in terms of agriculture, industry and services?
+
+# 2. Data Cleaning and Preparation
+
+The data set gender_equality was loaded into R. In the initial inspection, there were many columns for each year and the rows within Series Name were difficult to identify without scrolling through all the data. There were also many missing values, which also need to be sorted out.
+
+In order to get a clear understanding of the data. It needed to be cleaned to see what insights can be made and what data is actually being needed to visualize and report. By only having the main headings from the Series Name column you are able to distinguish and determine what data you will use to create the graphs.
+
+The data needed to be tidied. In order to do this, the years that were in multiple columns needed to be removed and made into only one column called years. The values that were in the year columns were also created and it was made into one column called Values. The function used to do this was pivot_longer. For example \[YR1976\] needed to be removed as it already stated what year it was as the column name is called Years and the number within the column shows the value of the year. This was done using the mutate function. It also needed to be made into a file and a function so that it can be recalled if needed instead of retyping the whole code. The second mutate function where year_value is recalled, makes all the columns that have the .. in them also known has empty or having no value in them, this type of entry does not add anything to the data, therefore it was changed into NA values instead. The NA values are then removed using the drop_na function. The rows now only contain values where there is data. This creates another file and a function is created called final_year_value. This function can now also be recalled if it is needed in a later stage. The data is now more organised and easier to read and understand. The cleaning and tidying of the data is not complete, as each visualisation is created, different parts of the data that is specifically being used will need to be tidied and cleaned. This part of cleaning and tidying the data is only needed to visualise and inspect specific parts of the data that will be used to create the graphs.
+
+In graph 1: It recalls the final_year_value. It filters the Series Name by age at first marriage, female and male. It changes the value and year columns into numeric as it is a number. It is summarised into a table with the average age calculated.
+
+In graph 2: This recalls the final_year_value dataset. The filtering is the same as graph 1 except you now calculate the maximum and minimum ages of females in their first marriage. You then arrange it so that it takes the top 5 maximum ages and the top 5 minimum ages and then puts it into two categories: highest and lowest, so that you can differentiate between the minimum and maximum ages.
+
+In graph 3: It is cleaned, tidied and filtered the same as graph 3 except it is the minimum and maximum ages for males in their first marriage.
+
+In graph 4: This recalls the final_year_value dataset. It filters by Series Name. The Series Name is then shortened. It then is grouped by year and participation gender. Then it is summarised into a table of average participation rate, which is then calculated.
+
+In graph 5: This recalls the final_year_value dataset. It filters only the years 1991 and 2021 and its Series Name. It is then grouped by year and Series Name. It is summarised into a table where the average employment is calculated.
+
+In graph 6: This recalls the final_year_value dataset. It filters by Series Name and only takes the years between 2017 and 2021. The year and value is mutated into numeric, so that it knows that it is a number. It is then grouped by year and Series Name and summarised into a table where the average percentage employment is calculated.
+
+```{r, echo=FALSE, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(readr)
+library(ggplot2)
+library(scales)
+library(ggrepel)
+library(patchwork)
+```
+
+```{r, echo=FALSE, include=FALSE}
+gender_equality <- read_csv("gender_equality_data.csv", show_col_types = FALSE)
+```
+
+```{r, echo=FALSE, include=FALSE}
+# Summarises the Series Name columns
+names <- gender_equality |>
+  distinct(`Series Name`) |>
+  arrange(`Series Name`)
+```
+
+```{r, echo=FALSE, include=FALSE}
+year_value <- gender_equality |>
+  pivot_longer(
+    cols = starts_with("19") | starts_with("20"),
+    names_to = "Year",
+    values_to = "Value"
+  ) |>
+  mutate(Year = str_extract(Year, "\\d{4}"))
+
+final_year_value <- year_value |>
+  mutate(Value = na_if(Value, "..")) |>
+  drop_na(Value) # Removes NA values
+```
+
+# 3. Exploratory Data Analysis
+
+## 3.1 Summary Statistic
+
+The key variables in the dataset are the ages at first marriage in females and males as this pertains to many of the research questions. It will provide the count, mean, median, minimum, maximum and standard deviation of the ages.
+
+```{r, echo=FALSE}
+age_marriage_female <- final_year_value |>
+  filter(`Series Name` %in% c("Age at first marriage, female", "Age at first marriage, male")) |>
+  mutate(Value = as.numeric(Value),
+         Year = as.numeric(Year)) |>
+  summarise(
+    count = n(),
+    mean = mean(Value, na.rm = TRUE),
+    median = median(Value, na.rm = TRUE),
+    min = min(Value, na.rm = TRUE),
+    max = max(Value, na.rm = TRUE),
+    sd = sd(Value, na.rm = TRUE))
+```
+
+| Count | Mean     | Median | Min | Max  | SD       |
+|-------|----------|--------|-----|------|----------|
+| 1839  | 26.72452 | 26.4   | 15  | 36.9 | 3.959246 |
+
+: Age of first marriage, female
+
+```{r, echo=FALSE}
+age_marriage_male <- final_year_value |>
+  filter(`Series Name` %in% c("Age at first marriage, male", "Age at first marriage, male")) |>
+  mutate(Value = as.numeric(Value),
+         Year = as.numeric(Year)) |>
+  summarise(
+    count = n(),
+    mean = mean(Value, na.rm = TRUE),
+    median = median(Value, na.rm = TRUE),
+    min = min(Value, na.rm = TRUE),
+    max = max(Value, na.rm = TRUE),
+    sd = sd(Value, na.rm = TRUE)
+  )
+```
+
+| Count | Mean     | Median | Min  | Max  | SD       |
+|-------|----------|--------|------|------|----------|
+| 875   | 28.57086 | 27.9   | 22.6 | 36.9 | 3.140134 |
+
+: Age of first marriage, male
+
+\newpage
+
+## 3.2 Visualisations
+
+```{r, echo=FALSE}
+average_age_marriage <- final_year_value |>
+  filter(`Series Name` %in% c("Age at first marriage, female", "Age at first marriage, male" )) |>
+  mutate(Value = as.numeric(Value),
+         Year = as.numeric(Year)) |>
+  group_by(Year, `Series Name`) |>
+  summarize(Average_Age = mean(Value, na.rm = TRUE), .groups = "drop" ) # Calculates average age using mean
+
+ggplot(average_age_marriage, aes(x = Year, y = Average_Age, color = `Series Name`, group = `Series Name`)) +
+  geom_line(linewidth = 0.8) +
+  labs(title = "Average Age at First Marriage by Gender (1976 - 2021)",
+       x = "Year",
+       y = "Average Age",
+       color = "Gender") +
+  scale_color_manual(values = c("Age at first marriage, female" = "pink", 
+                                "Age at first marriage, male" = "lightblue")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This line graph displays the average age between males and females over the years of 1976 to 2021. The results show that as the years increase the average age of males and females increase as well. The age of females at first marriage are consistently lower than males, meaning females marry at a younger age than males. There is a consistent gap between males and females, but both are showing them getting married at later stages over the years.
+
+```{r, echo=FALSE}
+female_marriage_country <- final_year_value |>
+  filter(`Series Name` == "Age at first marriage, female") |>
+  mutate(Value = as.numeric(Value)) |>
+  group_by(`Country Name`) |>
+  summarise(max_age = max(Value, na.rm = TRUE), min_age = min(Value, na.rm = TRUE))
+
+top_female <- female_marriage_country |>
+  arrange(desc(max_age)) |>
+  slice_head(n = 5)
+
+low_female <- female_marriage_country |>
+  arrange(min_age) |>
+  slice_head(n = 5)
+
+# Combines top_female data and low_female data into one data set
+total <- bind_rows(
+  top_female |>
+    mutate(Category = "Highest") |>
+    select(`Country Name`, Age = max_age, Category),
+  low_female |>
+    mutate(Category = "Lowest") |>
+    select(`Country Name`, Age = min_age, Category)
+)
+
+ggplot(total, aes(x = reorder(`Country Name`, Age), y = Age, fill = Category)) +
+  geom_bar(stat = "identity", position = "dodge", show.legend = TRUE) + # allows for min and max to be on one bar
+  coord_flip() +
+  labs(title = "Top 5 Countries with the Highest and Lowest Age of Females at First Marriage",
+       x = "Country",
+       y = "Age at Marriage",
+       fill = "Category") +
+  scale_fill_brewer(palette = "RdPu") +
+  theme_minimal() +
+   theme(plot.title = element_text(size = 10, hjust = 0.5))
+```
+
+This bar graph displays the top 5 countries with the highest and lowest ages of females at first marriage. The results show that Estonia has the highest age of first marriage. Sudan has the lowest age of first marriage out of all the other countries. This age is 15 years old. Jamaica has one of the top highest and lowest ages of first marriage.
+
+\newpage
+
+```{r, echo=FALSE}
+male_marriage_country <- final_year_value |>
+  filter(`Series Name` == "Age at first marriage, male") |>
+  mutate(Value = as.numeric(Value)) |>
+  group_by(`Country Name`) |>
+  summarise(max_age = max(Value, na.rm = TRUE), min_age = min(Value, na.rm = TRUE))
+
+top_male <- male_marriage_country |>
+  arrange(desc(max_age)) |>
+  slice_head(n = 5)
+
+low_male <- male_marriage_country |>
+  arrange(min_age) |>
+  slice_head(n = 5)
+
+total_male <- bind_rows(
+  top_male |>
+    mutate(Category = "Highest") |>
+    select(`Country Name`, Age = max_age, Category),
+  low_male |>
+    mutate(Category = "Lowest") |>
+    select(`Country Name`, Age = min_age, Category)
+)
+
+ggplot(total_male, aes(x = reorder(`Country Name`, Age), y = Age, fill = Category)) +
+  geom_bar(stat = "identity", position = "dodge", show.legend = TRUE) +
+  coord_flip() +
+  labs(title = "Top 5 Countries with the Highest and Lowest Age of Males at First Marriage",
+       x = "Country",
+       y = "Age at Marriage",
+       fill = "Category") +
+  scale_fill_brewer(palette = "Paired") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10, hjust = 0.5))
+```
+
+This bar graph displays the top 5 countries with the highest and lowest ages of males at first marriage over time. The results show that Botswana has the highest age of marriage out of all the other countries. The top 5 highest ages of first marriage are relatively close together, there are no huge disparities within the ages. Mozambique has the lowest age of marriage out of all the countries in the dataset.
+
+```{r, echo=FALSE}
+labour_force <- final_year_value |>
+  filter(`Series Name` %in% c(
+    "Labor force participation rate, female (% of female population ages 15-64) (modeled ILO estimate)", 
+    "Labor force participation rate, male (% of male population ages 15+) (modeled ILO estimate)", 
+    "Labor force participation rate, male (% of male population ages 15+) (national estimate)", 
+    "Labor force participation rate, male (% of male population ages 15-64) (modeled ILO estimate)")) 
+  
+# Shortening the Series Name
+labour_force_participation <- labour_force |>
+  mutate(
+    Value = as.numeric(Value),
+    Year = as.numeric(Year),
+    Participation_Gender = case_when(
+    `Series Name` == "Labor force participation rate, female (% of female population ages 15-64) (modeled ILO estimate)" ~ "Female (15-64)",
+    `Series Name` == "Labor force participation rate, male (% of male population ages 15+) (modeled ILO estimate)" ~ "Male (15+) - ILO",
+    `Series Name` == "Labor force participation rate, male (% of male population ages 15+) (national estimate)" ~ "Male (15+) - National",
+    `Series Name` == "Labor force participation rate, male (% of male population ages 15-64) (modeled ILO estimate)" ~ "Male (15-64) - ILO",
+  )) 
+
+labour_final <- labour_force_participation |>
+  group_by(Year, Participation_Gender) |>
+  summarise(Average_Participation_Rate = mean(Value, na.rm = TRUE), .groups = "drop") # Calculating the average participation rate using the mean
+
+ggplot(labour_final, aes(x = Year, y = Average_Participation_Rate, color = Participation_Gender, group = Participation_Gender)) +
+  geom_line(linewidth = 0.8) +
+  labs(
+    title = "Labour Force Participation by Gender (15-64 Years)",
+    x = "Year",
+    y = "Labour Force Partcipation Rate (%)",
+    color = "Series") +
+  scale_color_manual(values = c("Female (15-64)" = "hotpink",
+                                "Male (15+) - ILO" = "darkblue",
+                                "Male (15+) - National" = "green",
+                                "Male (15-64) - ILO" = "red")) + 
+  theme_minimal() 
+```
+
+This line graph shows the labour force participation rate between genders from the age of 15 to 64 years. The results show that in females from ages 15 to 64 the labour force participation has increased as the years increased, the line took a downward trend in 2020, but then immediately increased. In males from age 15 to 64 in ILO the percentage of labour force participation has been decreasing as the years increase, but in recent years it has started to slowly increase again. In males age 15+ in ILO the labour force participation percentage has decreased as the years have increased, but in 2020 it took a downward trend, but quickly started increasing. In males age 15+ in national the percentage of labour force participation has been consistently increasing and decreasing as the years have increased. Over the years even though it has been increasing and decreasing you can see that in the beginning of the years and until recently it has decreased from where it started.
+
+```{r, echo=FALSE}
+wage_gender <- final_year_value |>
+  filter(
+    Year %in% c("1991", "2021"), # Only using the data from 1991 and 2021
+    `Series Name` %in% c(
+      "Wage and salaried workers, female (% of female employment) (modeled ILO estimate)",
+      "Wage and salaried workers, male (% of male employment) (modeled ILO estimate)" 
+      )) |>
+  group_by(Year, `Series Name`) |>
+  summarise(Average_Employment = mean(as.numeric(Value), na.rm = TRUE), .groups = "drop")
+
+ggplot(wage_gender, aes(x = Year, y = Average_Employment, fill = `Series Name`)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Comparison of Salaries Workers by Gender (1991 vs 2021)",
+    x = "Year",
+    y = "Percentage of Employment (%)"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Wage and salaried workers, female (% of female employment) (modeled ILO estimate)" = "plum",
+      "Wage and salaried workers, male (% of male employment) (modeled ILO estimate)" = "skyblue"
+    ),
+    labels = c("Female", "Male")
+  ) +
+  theme_minimal()
+```
+
+This bar graph shows the comparison of wage and salaried workers by percentage of employment by gender over the years 1991 to 2021. The results show that there is not a huge disparity in percentage of employment between females and males in the earliest recordered data from the data set and the latest recorded data from the dataset. The gap between males and females for percentage of employment has become smaller. Both years the percentage of employment has been above 50%.
+
+```{r, echo=FALSE}
+employment_area <- final_year_value |>
+  filter(
+    `Series Name` %in% c(
+      "Employment in agriculture, female (% of female employment) (modeled ILO estimate)",
+      "Employment in agriculture, male (% of male employment) (modeled ILO estimate)",
+      "Employment in industry, female (% of female employment) (modeled ILO estimate)",
+      "Employment in industry, male (% of male employment) (modeled ILO estimate)",
+      "Employment in services, female (% of female employment) (modeled ILO estimate)",
+      "Employment in services, male (% of male employment) (modeled ILO estimate)"
+    ), 
+    Year >= 2017 & Year <= 2021
+  ) |>
+  mutate(
+    Value = as.numeric(Value), # Changing to numeric to read as a number
+    Year = as.numeric(Year)
+  ) |>
+  group_by(Year, `Series Name`) |>
+  summarise(Average_Percentage_Employment = mean(Value, na.rm = TRUE), .groups = "drop")
+
+ggplot(employment_area, aes(x = Year, y = Average_Percentage_Employment, fill = `Series Name`)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Employment in Agriculture, Industry and Services by Gender (Last 10 Years)",
+    x = "Year",
+    y = "Percentage of Employment (%)"
+  ) +
+    scale_fill_brewer(palette = "Paired",
+    labels = c("Agriculture - Female", "Agriculture - Male", "Industry - Female", "Industry - Male", "Services - Female", "Services - Male")
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10)) # Changes the title's font size to fit the graph
+```
+
+This bar graph shows the percentage of employment in agriculture, industry and services between female and males over the last 10 years. The results show that the percentage of employment for females and males in agriculture, industry and services has been very similar over the last 10 years. The graph shows that females occupy the highest percentage of employment in services and the lowest percentage employment in industry. Males occupy the highest percentage of employment in industry. The percentage of employment for females and males in agriculture are very close, but females are a higher percentage than males over all 10 years.
+
+\newpage
+
+# 4. Reporting
+
+## 4.1 Key Insights
+
+The analysis for average age at first marriage shows that males get married when they are older compared to females. The limitations for this analysis is that it ignores other factors that could affect marriage age and only considers the average age at first marriage. Females age of first marriage may be increasing as the years increase as they could be focusing on furthering their education and advancing in their careers. It would be beneficial to investigate the ways in which these patterns are influenced by variables including income, education level and cultural background.
+
+In countries with the highest and lowest age at first marriage Estonia has the highest. Sudan has the lowest age and this is 15 years old. Jamaica has one of the top highest and lowest ages. However the males are close in age for the highest and lowest ages. The limitations for this analysis is that it does not take culture, economic and social norms into account.
+
+The analysis for labour force participation rate by gender has a gap between males and females. Males clearly occupy a higher labour force participation rate. All four categories experienced a decrease in the year 2020, this could be due to Covid-19, but this could be further investigated. Limitations for this analysis could be economic developments that could impact the labour force participation rate.
+
+The analysis for comparison of wage and salaried workers by gender shows that there is not a large gap between the percentage of employment between females and males. In the analysis the percentage of employment could be investigated as to why the gap between males and females became smaller.
+
+The analysis for the percentage of employment in agriculture, industry and services between female and males over the last 10 year has remained consistent. There are certain male and female dominated employment areas, such as services is female dominated and industry is male dominated. Limitations of the analysis could be investigated as to the reasons why certain employment areas are more female and male dominated.
+
+## 4.2 Summary
+
+Many variables influence the growth of gender equality in the workplace, both by facilitating it and impeding it. There are limitations and challenges that persist as seen in the analysis. However, the gap of gender inequality as time progresses, is narrowing.
